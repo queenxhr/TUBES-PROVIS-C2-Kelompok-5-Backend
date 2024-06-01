@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50505
 File Encoding         : 65001
 
-Date: 2024-06-01 10:50:38
+Date: 2024-06-01 15:18:32
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -164,6 +164,31 @@ INSERT INTO `hari` VALUES ('5', 'Jumat');
 INSERT INTO `hari` VALUES ('6', 'Sabtu');
 
 -- ----------------------------
+-- Table structure for `invoice`
+-- ----------------------------
+DROP TABLE IF EXISTS `invoice`;
+CREATE TABLE `invoice` (
+  `id_invoice` int(11) NOT NULL AUTO_INCREMENT,
+  `no_invoice` varchar(255) NOT NULL,
+  `no_antrian` int(11) NOT NULL,
+  `tgl_invoice` date NOT NULL,
+  `waktu_invoice` time NOT NULL,
+  `id_dokter_i` int(11) NOT NULL,
+  `id_pasien_i` int(11) NOT NULL,
+  `qrcode` varchar(255) NOT NULL,
+  `pdf_invoice` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_invoice`),
+  KEY `fk_dokter_i` (`id_dokter_i`),
+  KEY `fk_pasien_i` (`id_pasien_i`),
+  CONSTRAINT `fk_dokter_i` FOREIGN KEY (`id_dokter_i`) REFERENCES `dokter` (`id_dokter`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_pasien_i` FOREIGN KEY (`id_pasien_i`) REFERENCES `pasien` (`id_pasien`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of invoice
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for `medcek`
 -- ----------------------------
 DROP TABLE IF EXISTS `medcek`;
@@ -183,6 +208,21 @@ CREATE TABLE `medcek` (
 -- ----------------------------
 
 -- ----------------------------
+-- Table structure for `metode_pembayaran`
+-- ----------------------------
+DROP TABLE IF EXISTS `metode_pembayaran`;
+CREATE TABLE `metode_pembayaran` (
+  `id_metode_pembayaran` int(11) NOT NULL AUTO_INCREMENT,
+  `metode_pembayaran` varchar(255) NOT NULL,
+  `kode_metode` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_metode_pembayaran`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of metode_pembayaran
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for `notifikasi`
 -- ----------------------------
 DROP TABLE IF EXISTS `notifikasi`;
@@ -191,11 +231,77 @@ CREATE TABLE `notifikasi` (
   `judul_notifikasi` varchar(255) NOT NULL,
   `isi_notifikasi` varchar(255) NOT NULL,
   `tgl_notifikasi` date NOT NULL,
+  `wkt_notifikasi` time NOT NULL,
   PRIMARY KEY (`id_notifikasi`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of notifikasi
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for `pasien`
+-- ----------------------------
+DROP TABLE IF EXISTS `pasien`;
+CREATE TABLE `pasien` (
+  `id_pasien` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_pasien` varchar(255) NOT NULL,
+  `nik_pasien` varchar(255) NOT NULL,
+  `tmpt_lahir_pasien` varchar(255) NOT NULL,
+  `tl_pasien` varchar(255) NOT NULL,
+  `jk_pasien` varchar(255) NOT NULL,
+  `alamat_pasien` varchar(255) NOT NULL,
+  `telp_pasien` varchar(255) NOT NULL,
+  `nama_pemesan` varchar(255) NOT NULL,
+  `telp_pemesan` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_pasien`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of pasien
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for `pembayaran_akhir`
+-- ----------------------------
+DROP TABLE IF EXISTS `pembayaran_akhir`;
+CREATE TABLE `pembayaran_akhir` (
+  `id_pembayaran` int(11) NOT NULL AUTO_INCREMENT,
+  `id_metode_pembayaran` int(11) NOT NULL,
+  `total_harga` varchar(255) NOT NULL,
+  `id_bayar` int(11) NOT NULL,
+  PRIMARY KEY (`id_pembayaran`),
+  KEY `fk_metode_pem` (`id_metode_pembayaran`),
+  KEY `fk_bayar` (`id_bayar`),
+  CONSTRAINT `fk_bayar` FOREIGN KEY (`id_bayar`) REFERENCES `status_bayar_akhir` (`id_bayar`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_metode_pem` FOREIGN KEY (`id_metode_pembayaran`) REFERENCES `metode_pembayaran` (`id_metode_pembayaran`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of pembayaran_akhir
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for `rekam_medis`
+-- ----------------------------
+DROP TABLE IF EXISTS `rekam_medis`;
+CREATE TABLE `rekam_medis` (
+  `id_rekammedis` int(11) NOT NULL AUTO_INCREMENT,
+  `id_invoice` int(11) NOT NULL,
+  `bb_pasien` int(11) NOT NULL,
+  `tekanan_darah` varchar(255) NOT NULL,
+  `hasil_diagnosa` varchar(255) NOT NULL,
+  `resep_obat` varchar(255) NOT NULL,
+  `id_status_pembayaran` int(11) NOT NULL,
+  PRIMARY KEY (`id_rekammedis`),
+  KEY `fk_invoice` (`id_invoice`),
+  KEY `fk_status_pem` (`id_status_pembayaran`),
+  CONSTRAINT `fk_invoice` FOREIGN KEY (`id_invoice`) REFERENCES `invoice` (`id_invoice`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_status_pem` FOREIGN KEY (`id_status_pembayaran`) REFERENCES `status_pembayaran` (`id_status_pembayaran`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of rekam_medis
 -- ----------------------------
 
 -- ----------------------------
@@ -233,6 +339,48 @@ INSERT INTO `spesialis` VALUES ('19', 'Psikologi');
 INSERT INTO `spesialis` VALUES ('20', 'Dokter Bedah Toraks');
 
 -- ----------------------------
+-- Table structure for `status_bayar_akhir`
+-- ----------------------------
+DROP TABLE IF EXISTS `status_bayar_akhir`;
+CREATE TABLE `status_bayar_akhir` (
+  `id_bayar` int(11) NOT NULL AUTO_INCREMENT,
+  `lunas_tidak` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_bayar`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of status_bayar_akhir
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for `status_checkin`
+-- ----------------------------
+DROP TABLE IF EXISTS `status_checkin`;
+CREATE TABLE `status_checkin` (
+  `id_checkin` int(11) NOT NULL AUTO_INCREMENT,
+  `status_checkin` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_checkin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of status_checkin
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for `status_pembayaran`
+-- ----------------------------
+DROP TABLE IF EXISTS `status_pembayaran`;
+CREATE TABLE `status_pembayaran` (
+  `id_status_pembayaran` int(11) NOT NULL AUTO_INCREMENT,
+  `status_pembayaran` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_status_pembayaran`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ----------------------------
+-- Records of status_pembayaran
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for `token`
 -- ----------------------------
 DROP TABLE IF EXISTS `token`;
@@ -250,6 +398,7 @@ CREATE TABLE `token` (
 -- ----------------------------
 -- Records of token
 -- ----------------------------
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMjYzNTIsInN1YiI6IjIifQ.qLP-y361KX_k4LYe81gfNCukYw5egd8gKi42s0mEISE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MjkzNTIsInN1YiI6IjIifQ.yNoa1E7SVzhIFyjJHanW3nnrfivaPqfUJJvh_XAs6W8', '1', '2024-06-01 13:49:12');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTE1NDcsInN1YiI6IjIifQ.SUyk719ZtPZLq8I5OAdlXTuJ_1BKPfSDpT-vZEtQ1Tk', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTQ1NDcsInN1YiI6IjIifQ.TxFUCQFiFdSLqH3mTFXo8k7nBc7xU_FIz-y6eRDvFKw', '1', '2024-06-01 09:42:27');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTI2NzIsInN1YiI6IjIifQ.ddC0gpT7pSbjLFLeWVoFKvOmq2dS55p_Khhnb6xMKA8', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTU2NzIsInN1YiI6IjIifQ.jZ6mpTzuVB6TMmRXAGgObLDMKMgmumPCPeuO8HqL5Vk', '1', '2024-06-01 10:01:12');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTI4MjcsInN1YiI6IjIifQ.YsGgyt3C9B9qBD9gqsaDzyWr34fgl_8GMKfZ19j-x3w', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTU4MjcsInN1YiI6IjIifQ.Q6xSQr1u4g6LefU7r2AE2hWrcPu9l3DSsLsJmPvAPmk', '1', '2024-06-01 10:03:47');
@@ -258,6 +407,8 @@ INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiO
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTQ5MDYsInN1YiI6IjIifQ.sCRAd37xWhT0dUSt7agjn2NX5RPT6K_j6EijPSJZZkA', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTc5MDYsInN1YiI6IjIifQ.4DD2pWzMQOIE9A4I_lrH_tsqkm4wJXOw-eUM2Mb1de8', '1', '2024-06-01 10:38:26');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTQ5NjEsInN1YiI6IjIifQ.-FwMG1sz-0l6PWI5jWql6SffcFfSs2XITlMluJNM-7k', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTc5NjEsInN1YiI6IjIifQ.WyV_MGA1s0OzNSnoDjDNe4Bb6zziPFWmNpsb9fgvnDY', '1', '2024-06-01 10:39:21');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTQzMzEsInN1YiI6IjIifQ.fjbI4TIsuJGCBlrg_qej6raY0elCZQxp6ZYwgEyAIHM', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTczMzEsInN1YiI6IjIifQ.L9NczRuDCwAEONIqByekNlktk_n5rEutPKS4atOU8Qg', '1', '2024-06-01 10:28:51');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTY2MDcsInN1YiI6IjIifQ.AbwC5U9JWW7ToKgP5I8o9GvGrWKqAJgPk92bSxPsAxs', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTk2MDcsInN1YiI6IjIifQ.8GRs9vjJ_m52mTwZmU28doDATeogDD4NSCSiJDPu3oA', '1', '2024-06-01 11:06:47');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTY2NzksInN1YiI6IjIifQ.W8CvNHY05BynxtBWLl1Q13KeJP0HMn4X2a8s3BPoYRk', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTk2NzksInN1YiI6IjIifQ.c4wvISplMivXcJNdgaZB5syymG9PV15dMR0GKeAZmoE', '1', '2024-06-01 11:07:59');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTY1NjU4MDEsInN1YiI6IjIifQ.S2pyIZLRStVNg1z84wqjwX9uMkV7jvH_PDQkuqi_K9I', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcxNjg4MDEsInN1YiI6IjIifQ.QbQ4S9I3vmrOL5k7uQ-BWtyyGzA9R2ooUBD2-cL6NYo', '1', '2024-05-24 22:20:01');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTY4MjQwMjksInN1YiI6IjIifQ.1RXNhdy8MdbPhrWe8C0uYikVpYNMKKrynu_IOa-FD6I', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc0MjcwMzAsInN1YiI6IjIifQ.TxCEOtYfNZswR52pE_rQjW335Sk0HBvnNJE80y9ELig', '1', '2024-05-27 22:03:50');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTY5NDg3NDUsInN1YiI6IjIifQ.HU5FKu3_POcUFCLshYItB3NI3h6AltjEMHjZoVEijSI', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NTE3NDUsInN1YiI6IjIifQ.YeqzkrXL5SWuv5TGXo_WPcvVRTVCm0bDEyCkpYIpTsc', '1', '2024-05-29 08:42:25');
