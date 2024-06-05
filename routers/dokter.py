@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 import os
+from sqlalchemy.sql import func
 from fastapi.responses import FileResponse
 from typing import List
 from models import *
@@ -10,85 +11,112 @@ from dependencies import *
 
 dokter_router = APIRouter(prefix='/dokters', tags=['dokters'])
 
-# CRUD Operations
+@dokter_router.get("/alldokter", response_model=ResponseBase, dependencies=[Depends(JWTBearer())])
+def get_all_dokter(db: Session = Depends(get_db)):
+    results = db.query(Dokter).all()
+    dokter_dict = {}
+    for dokter in results:
+        dokter_hari_waktu_list = db.query(DokterHariWaktu).filter(DokterHariWaktu.id_dokter == dokter.id_dokter).all()
+        hari_list = [hw.hari.nama_hari for hw in dokter_hari_waktu_list]
+        if dokter.id_dokter not in dokter_dict:
+            dokter_dict[dokter.id_dokter] = {
+                "nama_dokter": dokter.nama_dokter,
+                "spesialis": dokter.spesialis.nama_spesialis,
+                "hari": hari_list
+            }
+    response_data = [DokterListResponseData(**data) for data in dokter_dict.values()]
+    return ResponseBase(message="Dokters retrieved successfully", data=response_data, error=False)
 
-def get_dokters(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Dokter).offset(skip).limit(limit).all()
+@dokter_router.get("/searchdokter", response_model=list[DokterSearchResponse], dependencies=[Depends(JWTBearer())])
+def search_dokter(nama: str, db: Session = Depends(get_db)):
+    results = db.query(Dokter).filter(func.lower(Dokter.nama_dokter).contains(func.lower(nama))).all()
+    return results
 
-def get_dokter(db: Session, dokter_id: int):
-    return db.query(Dokter).filter(Dokter.id_dokter == dokter_id).first()
+@dokter_router.get('/filterhari', response_model=dict, dependencies=[Depends(JWTBearer())])
+async def read_all_hari_endpoint(db: Session = Depends(get_db)):
+    hari_list = db.query(Hari).all()
+    if not hari_list:
+        raise HTTPException(status_code=404, detail="Hari tidak ditemukan")
 
-def create_dokter(db: Session, dokter: DokterCreate):
-    db_dokter = Dokter(
-        nama_dokter=dokter.nama_dokter,
-        id_spesialis_d=dokter.id_spesialis_d,
-        deskripsi_dokter=dokter.deskripsi_dokter
-    )
-    db.add(db_dokter)
-    db.commit()
-    db.refresh(db_dokter)
-    return db_dokter
+    response = [{"id_hari": hari.id_hari, "nama_hari": hari.nama_hari} for hari in hari_list]
 
-def delete_dokter(db: Session, dokter_id: int):
-    db_dokter = db.query(Dokter).filter(Dokter.id_dokter == dokter_id).first()
-    if db_dokter:
-        db.delete(db_dokter)
-        db.commit()
-    return db_dokter
+    return {
+        "message": "Hari berhasil diambil",
+        "hari": response
+    }
 
-# Router Endpoints
+@dokter_router.get('/filterwaktu', response_model=dict, dependencies=[Depends(JWTBearer())])
+async def read_all_waktu_endpoint(db: Session = Depends(get_db)):
+    waktu_list = db.query(Waktu).all()
+    if not waktu_list:
+        raise HTTPException(status_code=404, detail="Waktu tidak ditemukan")
 
-@dokter_router.post("/dokters/", response_model=Dokter, dependencies=[Depends(JWTBearer())])
-def create_dokter_endpoint(dokter: DokterCreate, db: Session = Depends(get_db)):
-    return create_dokter(db=db, dokter=dokter)
+    response = [{"id_waktu": waktu.id_waktu, "nama_waktu": waktu.nama_waktu} for waktu in waktu_list]
 
-@dokter_router.get("/dokters/", response_model=List[Dokter], dependencies=[Depends(JWTBearer())])
-def read_dokters_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    dokters = get_dokters(db, skip=skip, limit=limit)
+    return {
+        "message": "Waktu berhasil diambil",
+        "waktu": response
+    }
+
+@dokter_router.get('/filterspesialis', response_model=dict, dependencies=[Depends(JWTBearer())])
+async def read_all_spesialis_endpoint(db: Session = Depends(get_db)):
+    spesialis_list = db.query(Spesialis).all()
+    if not spesialis_list:
+        raise HTTPException(status_code=404, detail="Spesialis tidak ditemukan")
+
+    response = [{"id_spesialis": spesialis.id_spesialis, "nama_spesialis": spesialis.nama_spesialis} for spesialis in spesialis_list]
+
+    return {
+        "message": "Spesialis berhasil diambil",
+        "spesialis": response
+    }
+    
+@dokter_router.post("/pilihfilterspesialisasi", response_model=list[DokterBase], dependencies=[Depends(JWTBearer())])
+def pilih_filter_spesialisasi(filter: FilterSpesialisasi, db: Session = Depends(get_db)):
+    dokters = db.query(Dokter).filter(Dokter.id_spesialis_d == filter.id_spesialis).all()
     return dokters
 
-@dokter_router.get("/dokters/{dokter_id}", response_model=Dokter, dependencies=[Depends(JWTBearer())])
-def read_dokter_endpoint(dokter_id: int, db: Session = Depends(get_db)):
-    db_dokter = get_dokter(db, dokter_id=dokter_id)
-    if db_dokter is None:
+@dokter_router.post("/pilihfilterhari", response_model=list[DokterHariWaktuBase], dependencies=[Depends(JWTBearer())])
+def pilih_filter_hari(filter: FilterHari, db: Session = Depends(get_db)):
+    dokter_hari_waktus = db.query(DokterHariWaktu).filter(DokterHariWaktu.id_hari_d == filter.id_hari).all()
+    return dokter_hari_waktus
+
+@dokter_router.post("/pilihfilterwaktu", response_model=list[DokterHariWaktuBase], dependencies=[Depends(JWTBearer())])
+def pilih_filter_waktu(filter: FilterWaktu, db: Session = Depends(get_db)):
+    dokter_hari_waktus = db.query(DokterHariWaktu).filter(DokterHariWaktu.id_waktu_d == filter.id_waktu).all()
+    return dokter_hari_waktus
+
+@dokter_router.get("/fotodetaildokter/{id_dokter}", dependencies=[Depends(JWTBearer())])
+def foto_detail_dokter(id_dokter: int, db: Session = Depends(get_db)):
+    dokter = db.query(Dokter).filter(Dokter.id_dokter == id_dokter).first()
+    if not dokter:
         raise HTTPException(status_code=404, detail="Dokter not found")
-    return db_dokter
+    # Assuming you have a photo URL or path stored in the dokter table
+    return {"photo_url": f"/images/{dokter.id_dokter}"}
 
-@dokter_router.delete("/dokters/{dokter_id}", response_model=Dokter, dependencies=[Depends(JWTBearer())])
-def delete_dokter_endpoint(dokter_id: int, db: Session = Depends(get_db)):
-    db_dokter = get_dokter(db, dokter_id=dokter_id)
-    if db_dokter is None:
+@dokter_router.get("/detaildokter/{id_dokter}", response_model=DokterDetail, dependencies=[Depends(JWTBearer())])
+def detail_dokter(id_dokter: int, db: Session = Depends(get_db)):
+    dokter = db.query(Dokter).filter(Dokter.id_dokter == id_dokter).first()
+    if not dokter:
         raise HTTPException(status_code=404, detail="Dokter not found")
-    return delete_dokter(db=db, dokter_id=dokter_id)
-
-# @dokter_router.post('/', response_model=Dokter)
-# def create_dokter(dokter: DokterCreate, db: Session = Depends(get_db)):
-#     db_dokter = Dokter(**dokter.dict())
-#     db.add(db_dokter)
-#     db.commit()
-#     db.refresh(db_dokter)
-#     return db_dokter
-
-# @dokter_router.get('/', response_model=List[Dokter])
-# def read_dokters(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-#     dokters = db.query(Dokter).offset(skip).limit(limit).all()
-#     return dokters
-
-# @dokter_router.get('/getalldokter', dependencies=[Depends(JWTBearer())])
-# async def get_all_dokter(db: Session = Depends(get_db)):
-#     dokters = db.query(Dokter).all()
-#     return {
-#         "message": "Dokter berhasil diambil",
-#         "dokters": dokters,
-#     }
     
-# @dokter_router.get('/getalldokter/', response_model=List[DokterHariWaktu], dependencies=[Depends(JWTBearer())])
-# async def get_dokter_hari_waktu(db: Session = Depends(get_db)):
-#     return db.query(DokterHariWaktu).all()
+    dokter_hari_waktu_list = db.query(DokterHariWaktu).filter(DokterHariWaktu.id_dokter == id_dokter).all()
+    if not dokter_hari_waktu_list:
+        raise HTTPException(status_code=404, detail="Dokter schedule not found")
 
-# @dokter_router.get('/getdokterby/{id_dokter_hari_waktu}', response_model=DokterHariWaktu, dependencies=[Depends(JWTBearer())])
-# async def get_dokter_hari_waktu_by_id(id_dokter_hari_waktu: int, db: Session = Depends(get_db)):
-#     db_dokter = db.query(DokterHariWaktu).filter(DokterHariWaktu.id_dokter_hari_waktu == id_dokter_hari_waktu).first()
-#     if db_dokter is None:
-#         raise HTTPException(status_code=404, detail="Dokter tidak ditemukan")
-#     return db_dokter
+    jadwal = [{"hari": d.hari, "waktu": d.waktu} for d in dokter_hari_waktu_list]
+
+    return {
+        "nama_dokter": dokter.nama_dokter,
+        "spesialis": dokter.spesialis,
+        "jadwal": jadwal,
+        "deskripsi_dokter": dokter.deskripsi_dokter
+    }
+
+@dokter_router.get("/jadwaldokter/{id_dokter}", response_model=list[HariWaktu], dependencies=[Depends(JWTBearer())])
+def jadwal_dokter(id_dokter: int, db: Session = Depends(get_db)):
+    jadwal = db.query(DokterHariWaktu).filter(DokterHariWaktu.id_dokter == id_dokter).all()
+    if not jadwal:
+        raise HTTPException(status_code=404, detail="Jadwal dokter tidak ditemukan")
+    return [{"hari": j.hari, "waktu": j.waktu} for j in jadwal]
+

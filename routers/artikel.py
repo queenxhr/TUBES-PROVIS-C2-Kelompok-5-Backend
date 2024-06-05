@@ -9,47 +9,47 @@ from models import *
 
 artikel_router = APIRouter(prefix='/artikels', tags=['artikels'])
 
-@artikel_router.post('/', response_model=ResponseBase, dependencies=[Depends(JWTBearer())])
-async def create_article(
-    judul_artikel: str = Form(...),
-    isi_artikel: str = Form(...),
-    foto_artikel: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    existingartikel = db.query(Artikel).filter(Artikel.judul_artikel == judul_artikel).first()
+# @artikel_router.post('/', response_model=ResponseBase, dependencies=[Depends(JWTBearer())])
+# async def create_article(
+#     judul_artikel: str = Form(...),
+#     isi_artikel: str = Form(...),
+#     foto_artikel: UploadFile = File(...),
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     existingartikel = db.query(Artikel).filter(Artikel.judul_artikel == judul_artikel).first()
     
-    if existingartikel:
-        raise HTTPException(status_code=400, detail="Artikel sudah terdaftar")
+#     if existingartikel:
+#         raise HTTPException(status_code=400, detail="Artikel sudah terdaftar")
     
-    try:
-        foto_artikel = await foto_artikel.read()
-        file_location = f"./data_file/{foto_artikel.filename}"
-        with open(file_location, 'wb') as f:
-            f.write(foto_artikel)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error uploading file")
-    finally:
-        await foto_artikel.close()
+#     try:
+#         foto_artikel = await foto_artikel.read()
+#         file_location = f"./data_file/{foto_artikel.filename}"
+#         with open(file_location, 'wb') as f:
+#             f.write(foto_artikel)
+#     except Exception:
+#         raise HTTPException(status_code=500, detail="Error uploading file")
+#     finally:
+#         await foto_artikel.close()
         
-    new_article = Artikel(
-        judul_artikel=judul_artikel,
-        isi_artikel=isi_artikel,
-        foto_artikel=file_location
-    )
+#     new_article = Artikel(
+#         judul_artikel=judul_artikel,
+#         isi_artikel=isi_artikel,
+#         foto_artikel=file_location
+#     )
     
-    db.add(new_article)
-    db.commit()
-    db.refresh(new_article)
+#     db.add(new_article)
+#     db.commit()
+#     db.refresh(new_article)
     
-    response_data = ArtikelResponseData(
-        id=new_article.id_artikel,
-        judul_a=new_article.judul_artikel,
-        id_a=new_article.id_artikel,
-        isi_a=new_article.isi_artikel,
-        foto_a=new_article.foto_artikel
-    )
-    return ResponseBase(message="Artikel berhasil dibuat", data=response_data, error=False)
+#     response_data = ArtikelResponseData(
+#         id=new_article.id_artikel,
+#         judul_a=new_article.judul_artikel,
+#         id_a=new_article.id_artikel,
+#         isi_a=new_article.isi_artikel,
+#         foto_a=new_article.foto_artikel
+#     )
+#     return ResponseBase(message="Artikel berhasil dibuat", data=response_data, error=False)
 
 @artikel_router.get('/getall', dependencies=[Depends(JWTBearer())])
 async def get_all_artikels(db: Session = Depends(get_db)):
@@ -89,9 +89,10 @@ async def get_foto_artikel(id_artikel: int, db: Session = Depends(get_db)):
 
     return FileResponse(file_path)
 
-# @artikel_router.get('/get_photo/{foto_a}', dependencies=[Depends(JWTBearer())])
-# async def getphoto(foto_a: str):
-#     path = f"./images/{foto_a}"
-#     if not os.path.exists(path):
-#         raise HTTPException(status_code=404, detail="Foto tidak ditemukan")
-#     return FileResponse(path)
+@artikel_router.get("/fotoartikel/{foto_a}", dependencies=[Depends(JWTBearer())])
+async def get_one_foto_artikel(foto_a: str, db: Session = Depends(get_db)):
+    # Assuming foto_a contains the filename of the image
+    path = f"../images/{foto_a}"
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path)

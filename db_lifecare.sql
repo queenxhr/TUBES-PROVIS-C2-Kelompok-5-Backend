@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50505
 File Encoding         : 65001
 
-Date: 2024-06-01 15:18:32
+Date: 2024-06-05 15:13:21
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -175,13 +175,15 @@ CREATE TABLE `invoice` (
   `waktu_invoice` time NOT NULL,
   `id_dokter_i` int(11) NOT NULL,
   `id_pasien_i` int(11) NOT NULL,
-  `qrcode` varchar(255) NOT NULL,
   `pdf_invoice` varchar(255) NOT NULL,
+  `id_status_checkin` int(11) NOT NULL,
   PRIMARY KEY (`id_invoice`),
   KEY `fk_dokter_i` (`id_dokter_i`),
   KEY `fk_pasien_i` (`id_pasien_i`),
+  KEY `fk_st_check` (`id_status_checkin`),
   CONSTRAINT `fk_dokter_i` FOREIGN KEY (`id_dokter_i`) REFERENCES `dokter` (`id_dokter`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_pasien_i` FOREIGN KEY (`id_pasien_i`) REFERENCES `pasien` (`id_pasien`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_pasien_i` FOREIGN KEY (`id_pasien_i`) REFERENCES `pasien` (`id_pasien`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_st_check` FOREIGN KEY (`id_status_checkin`) REFERENCES `status_checkin` (`id_checkin`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
@@ -201,11 +203,14 @@ CREATE TABLE `medcek` (
   `detail_medcek` varchar(255) NOT NULL,
   `prosedur_medcek` varchar(255) NOT NULL,
   PRIMARY KEY (`id_medcek`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of medcek
 -- ----------------------------
+INSERT INTO `medcek` VALUES ('1', 'PAKET A', 'Ibu dan Anak', 'Rp 1.000.000', '', 'Pemeriksaan skrining pelajar untuk mengetahui apakah peserta sehat sesuai dengan usianya', 'Cek berat badan');
+INSERT INTO `medcek` VALUES ('3', 'PAKET C', 'Skrining jantung', 'Rp 1.200.000', '', 'ya begitulah', 'Rontgen dada');
+INSERT INTO `medcek` VALUES ('5', 'PAKET B', 'Skrining Umum', 'Rp 990.000', '', 'iya', 'gatau');
 
 -- ----------------------------
 -- Table structure for `metode_pembayaran`
@@ -216,11 +221,19 @@ CREATE TABLE `metode_pembayaran` (
   `metode_pembayaran` varchar(255) NOT NULL,
   `kode_metode` varchar(255) NOT NULL,
   PRIMARY KEY (`id_metode_pembayaran`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of metode_pembayaran
 -- ----------------------------
+INSERT INTO `metode_pembayaran` VALUES ('1', 'BCA', 'BCA');
+INSERT INTO `metode_pembayaran` VALUES ('2', 'BNI', 'BNI');
+INSERT INTO `metode_pembayaran` VALUES ('3', 'BRI', 'BRI');
+INSERT INTO `metode_pembayaran` VALUES ('4', 'Mandiri', 'MANDIRI');
+INSERT INTO `metode_pembayaran` VALUES ('5', 'Dana', 'DANA');
+INSERT INTO `metode_pembayaran` VALUES ('6', 'Gopay', 'GOPAY');
+INSERT INTO `metode_pembayaran` VALUES ('7', 'Shopeepay', 'SHOPEEPAY');
+INSERT INTO `metode_pembayaran` VALUES ('8', 'OVO', 'OVO');
 
 -- ----------------------------
 -- Table structure for `notifikasi`
@@ -248,33 +261,34 @@ CREATE TABLE `pasien` (
   `nama_pasien` varchar(255) NOT NULL,
   `nik_pasien` varchar(255) NOT NULL,
   `tmpt_lahir_pasien` varchar(255) NOT NULL,
-  `tl_pasien` varchar(255) NOT NULL,
+  `tl_pasien` date NOT NULL,
   `jk_pasien` varchar(255) NOT NULL,
   `alamat_pasien` varchar(255) NOT NULL,
   `telp_pasien` varchar(255) NOT NULL,
   `nama_pemesan` varchar(255) NOT NULL,
   `telp_pemesan` varchar(255) NOT NULL,
   PRIMARY KEY (`id_pasien`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of pasien
 -- ----------------------------
+INSERT INTO `pasien` VALUES ('1', 'ratu', '3217', 'bdg', '2024-06-02', 'Perempuan', 'jl. setbud', '0812', 'ica', '0899');
+INSERT INTO `pasien` VALUES ('2', 'faya', '3217', '1bdg', '2024-06-03', 'perempuan', 'jl. setbud', '0898', 'ratu', '0988');
 
 -- ----------------------------
 -- Table structure for `pembayaran_akhir`
 -- ----------------------------
 DROP TABLE IF EXISTS `pembayaran_akhir`;
 CREATE TABLE `pembayaran_akhir` (
-  `id_pembayaran` int(11) NOT NULL AUTO_INCREMENT,
-  `id_metode_pembayaran` int(11) NOT NULL,
-  `total_harga` varchar(255) NOT NULL,
-  `id_bayar` int(11) NOT NULL,
-  PRIMARY KEY (`id_pembayaran`),
-  KEY `fk_metode_pem` (`id_metode_pembayaran`),
-  KEY `fk_bayar` (`id_bayar`),
-  CONSTRAINT `fk_bayar` FOREIGN KEY (`id_bayar`) REFERENCES `status_bayar_akhir` (`id_bayar`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_metode_pem` FOREIGN KEY (`id_metode_pembayaran`) REFERENCES `metode_pembayaran` (`id_metode_pembayaran`) ON DELETE CASCADE ON UPDATE CASCADE
+  `id_pembayaran` int(11) DEFAULT NULL,
+  `id_rekmedis` int(11) DEFAULT NULL,
+  `id_metode_pembayaran` int(11) DEFAULT NULL,
+  `total_harga` varchar(255) DEFAULT NULL,
+  KEY `fk_rekmedis` (`id_rekmedis`),
+  KEY `fk_metode` (`id_metode_pembayaran`),
+  CONSTRAINT `fk_metode` FOREIGN KEY (`id_metode_pembayaran`) REFERENCES `metode_pembayaran` (`id_metode_pembayaran`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_rekmedis` FOREIGN KEY (`id_rekmedis`) REFERENCES `rekam_medis` (`id_rekammedis`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
@@ -292,12 +306,12 @@ CREATE TABLE `rekam_medis` (
   `tekanan_darah` varchar(255) NOT NULL,
   `hasil_diagnosa` varchar(255) NOT NULL,
   `resep_obat` varchar(255) NOT NULL,
-  `id_status_pembayaran` int(11) NOT NULL,
+  `id_status_bayar_akhir` int(11) NOT NULL,
   PRIMARY KEY (`id_rekammedis`),
   KEY `fk_invoice` (`id_invoice`),
-  KEY `fk_status_pem` (`id_status_pembayaran`),
+  KEY `fk_status_bayar` (`id_status_bayar_akhir`),
   CONSTRAINT `fk_invoice` FOREIGN KEY (`id_invoice`) REFERENCES `invoice` (`id_invoice`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_status_pem` FOREIGN KEY (`id_status_pembayaran`) REFERENCES `status_pembayaran` (`id_status_pembayaran`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_status_bayar` FOREIGN KEY (`id_status_bayar_akhir`) REFERENCES `status_bayar_akhir` (`id_bayar`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
@@ -346,11 +360,13 @@ CREATE TABLE `status_bayar_akhir` (
   `id_bayar` int(11) NOT NULL AUTO_INCREMENT,
   `lunas_tidak` varchar(255) NOT NULL,
   PRIMARY KEY (`id_bayar`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of status_bayar_akhir
 -- ----------------------------
+INSERT INTO `status_bayar_akhir` VALUES ('1', 'Lunas');
+INSERT INTO `status_bayar_akhir` VALUES ('2', 'Belum Lunas');
 
 -- ----------------------------
 -- Table structure for `status_checkin`
@@ -360,24 +376,26 @@ CREATE TABLE `status_checkin` (
   `id_checkin` int(11) NOT NULL AUTO_INCREMENT,
   `status_checkin` varchar(255) NOT NULL,
   PRIMARY KEY (`id_checkin`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of status_checkin
 -- ----------------------------
+INSERT INTO `status_checkin` VALUES ('1', 'Check In');
+INSERT INTO `status_checkin` VALUES ('2', 'Batal Check In');
 
 -- ----------------------------
--- Table structure for `status_pembayaran`
+-- Table structure for `tahapan`
 -- ----------------------------
-DROP TABLE IF EXISTS `status_pembayaran`;
-CREATE TABLE `status_pembayaran` (
-  `id_status_pembayaran` int(11) NOT NULL AUTO_INCREMENT,
-  `status_pembayaran` varchar(255) NOT NULL,
-  PRIMARY KEY (`id_status_pembayaran`)
+DROP TABLE IF EXISTS `tahapan`;
+CREATE TABLE `tahapan` (
+  `id_tahapan` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_tahapan` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_tahapan`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
--- Records of status_pembayaran
+-- Records of tahapan
 -- ----------------------------
 
 -- ----------------------------
@@ -398,6 +416,38 @@ CREATE TABLE `token` (
 -- ----------------------------
 -- Records of token
 -- ----------------------------
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1Njc2MjUsInN1YiI6IjkifQ.8EzUwUbUu4Olgsjl9mI665eq1Fn-UeYwrcniP8qg8qw', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzA2MjUsInN1YiI6IjkifQ.ygyDibihSVTmOBM7KWEHLapHgc2U3UxuC7URxsRelHs', '1', '2024-06-05 12:37:05');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1Njc3NjgsInN1YiI6IjkifQ.KSN8yRv40KGv2FIDPse-lY6c_R_loylq-_stN2V5dLE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzA3NjgsInN1YiI6IjkifQ._0SHKbNJSrGO0lknOZl-UMPysbPfKn4bSYf_p6qa-4Q', '1', '2024-06-05 12:39:28');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1Njc4MTIsInN1YiI6IjkifQ.n5AsZ7k9gEynil1GjYpxqwRrNkjfR9pGRyPXtOlrAp4', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzA4MTIsInN1YiI6IjkifQ.v2ZHU6OqCu0XCxbqgMsJKPevn_tQKAQbM9vK_7WL7TE', '1', '2024-06-05 12:40:12');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1Njc4NDQsInN1YiI6IjkifQ._UghEY1MhqP51gIJuj8a3NxDK5HQNyt0byxoih13AqE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzA4NDQsInN1YiI6IjkifQ.KkF5ZYzDEA5AkBP--qMrFw3M_Ro6YYDKrdfxZqJfXys', '1', '2024-06-05 12:40:44');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1Njg3NzgsInN1YiI6IjkifQ.A0EkHqNcmDTirK83bFEzXPxnCPmAmnId8iqs_Qapyqo', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzE3NzgsInN1YiI6IjkifQ.p74Z-LQ8w66YCUQnYefsVmpgV9E2fpVtt9QQxYHwrPg', '1', '2024-06-05 12:56:18');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1Njg4MTgsInN1YiI6IjkifQ.LGEReiEL8etkxnZwTAjRbISJJohRN_tl7_CRm32VNPw', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzE4MTgsInN1YiI6IjkifQ.oh3d4SqRSnVSJ5EaaVmnGQ7k2-d8Gs8n5-uoe6D9Gzs', '1', '2024-06-05 12:56:58');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjgxMzYsInN1YiI6IjkifQ.9W192jWqZ2SzXpOglTsutcokh7HEWnFLqssVuxkDkMA', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzExMzYsInN1YiI6IjkifQ.k7rcC5ttSIeur7aghqSqm39S7pMqbcXM2ALpWpl0McI', '1', '2024-06-05 12:45:36');
+INSERT INTO `token` VALUES ('1', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjgyNDEsInN1YiI6IjEifQ.o5J0DYAemzDw6vGUAalZqMAHg7q1IYfaqH28k5RXSqk', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzEyNDEsInN1YiI6IjEifQ.CwNpwij-BarCmPv_5oYW9zWQ4olRuk3UPCajZ5eSTW8', '1', '2024-06-05 12:47:21');
+INSERT INTO `token` VALUES ('1', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjgyNjIsInN1YiI6IjEifQ.lV5U-zjxJ4XKBG6l4ReebLP2fBLsu1J3to52dSyQeXo', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzEyNjIsInN1YiI6IjEifQ.6Z7nQoGpHaex5fak4uNWkJ8rLzZqplIi-fisgF1hyxI', '1', '2024-06-05 12:47:42');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1Njk0MzIsInN1YiI6IjkifQ.6qgb2ssA9fRff1rqlbN3RzW728CmP32Q1X3KZNmVJmA', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzI0MzIsInN1YiI6IjkifQ.mOxNok3POQMupJscrUJY1Cb4TZ2ydSG3XNXw_ltEuII', '1', '2024-06-05 13:07:12');
+INSERT INTO `token` VALUES ('1', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjkzODEsInN1YiI6IjEifQ.W5XYX2dtNsw1C7QGvcIAtBNAJkiuMA697CbaIwuBOFE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzIzODEsInN1YiI6IjEifQ.w8iIzUfP61JwgwlpAvTlu5RU7ZVRSve7y3KCR7rGsBY', '1', '2024-06-05 13:06:21');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjM1NTQsInN1YiI6IjIifQ.RtJC1m04oFizAeZUEh3ghqRD6YciAzxxKqUXR2DkMW8', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjY1NTQsInN1YiI6IjIifQ.RpWYOo70psJWHs1jrYjJ2L4X1L7lFtTLjooePe2f6J4', '1', '2024-06-05 11:29:14');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjM2NzcsInN1YiI6IjIifQ.eqfdTRLuubiW5RUAkMcuXXe0bIgeYOgCaSJHk0PAU5g', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjY2NzcsInN1YiI6IjIifQ.Fj9WZFI9z_KZkb0nOy0xYMXVvLW00dzMlHFGmpfZhsc', '1', '2024-06-05 11:31:17');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjM4NzUsInN1YiI6IjIifQ.g1oVzs3Jn5wHTsJyuhn03xgV5fm0GBkG3Wr4nf-dcx8', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjY4NzUsInN1YiI6IjIifQ.txB1aNc_jfN6vr6j_zGomZQXdjH8rHDCF3dC0PQGfD4', '1', '2024-06-05 11:34:35');
+INSERT INTO `token` VALUES ('1', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjMzNjksInN1YiI6IjEifQ.yls1zCnEIgKF15XNX-OnWdiBEHxDs4kmnbUhlKE54-w', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjYzNjksInN1YiI6IjEifQ.NxWyEputQa1RNfpXcas54fpxcpIDAXrMS1nKaI4TMU8', '1', '2024-06-05 11:26:09');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjU3NzEsInN1YiI6IjkifQ.C0Cv6h1rgkZ3jo-DGTw8iU65W9DYIe33shbu91LT9zI', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjg3NzEsInN1YiI6IjkifQ.pTIoRiPkm4RhkKZ2_vKuAKSXVb2bsBtDzNNw7xVpfvg', '1', '2024-06-05 12:06:11');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjUxMzIsInN1YiI6IjkifQ.dIDQhh2BZZIoB5GiLAZW0yAZqvbLs_nhUH_MOnj9mz4', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjgxMzIsInN1YiI6IjkifQ.6IbD8AF9bPko6yAx81ka3NHN1-Z9IOC4JJ1BvQHVGCU', '1', '2024-06-05 11:55:32');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjUxOTMsInN1YiI6IjkifQ.iZ2fqi_cqrvSZQIRCwc-iXE_vhgA1N7HL9Ba6U7VDGE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjgxOTMsInN1YiI6IjkifQ.RhP1iJ1wHEIQHTYT3I19UgvDNkcpUAn-660ZNJA4wdw', '1', '2024-06-05 11:56:33');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NjYxNjUsInN1YiI6IjkifQ._CJU1Sjr8FSohXHEvNk51T5B6OHrSh_o1RjySw61BwA', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNjkxNjYsInN1YiI6IjkifQ.m7RgGL6r_L2W0YqaN1d8phMMRkQpBHBBZL2BPeL5YjE', '1', '2024-06-05 12:12:46');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NTQ3ODAsInN1YiI6IjIifQ.fnDIJMbV6RIYo9ogUHBhGtbSo8BVC8nbPKl2tHw0wUw', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNTc3ODAsInN1YiI6IjIifQ.Ckbn_cRoicDSRzcHzkzGyJXGbUMvg9pQL6FRmxy9_NA', '1', '2024-06-05 09:03:00');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NTQ5MzYsInN1YiI6IjIifQ.6dQ40_MpbcSQIX250gWbWc12PQM2Z_VGllW5bxdGjAI', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNTc5MzYsInN1YiI6IjIifQ.zdD-wMXt7moSkmq3lZROttuEfLNRNFMELbMP0hHnA0A', '1', '2024-06-05 09:05:36');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzI3NTYsInN1YiI6IjkifQ.aQ7U3ogr5cd70ptl43QVHVACvlj4I8X-MPDV1ebH7xc', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzU3NTYsInN1YiI6IjkifQ.80hdhO9X_N9p_Oh06N16EVdVGvrI1LloAIGkcTjAZUE', '1', '2024-06-05 14:02:36');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzI4NzQsInN1YiI6IjkifQ.dGwbeY-6EvdQPZdgO7TA7rSYBBX_XRH9QehsTt1ISfI', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzU4NzQsInN1YiI6IjkifQ.5F-em1JZOMDFdv85NMT0s2iFZliFvKPRApfTjIsASWY', '1', '2024-06-05 14:04:34');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzMwNTksInN1YiI6IjkifQ.E9zWZk7ckeP9uZCut8j4G4OzcmJ_ituZKQRqR6CyfEk', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzYwNTksInN1YiI6IjkifQ.68ZXZLoG8AzOBVcZoEKQf8DBMngt8bfSdiKKfUIIlGU', '1', '2024-06-05 14:07:39');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzQ2NDYsInN1YiI6IjkifQ.JLVFEYyvL2yjJ_h8pFLDP6ayA2zRZakbs2BWwJ505Yk', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzc2NDYsInN1YiI6IjkifQ.pg9O70mTcG4ukk38wB_Nc6KPlU9vMg5LQ3adchYKH0Y', '1', '2024-06-05 14:34:06');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzQ2ODIsInN1YiI6IjkifQ.ClJwxlrwNN6xET3K3oApJVzPcLXhIAOkic-3RbMabnc', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzc2ODIsInN1YiI6IjkifQ.8b9tTAwh5FQmy_CNesVU--NL28l3l3H0NShknCrzzOQ', '1', '2024-06-05 14:34:42');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzQ3MjEsInN1YiI6IjkifQ.j0M6L_ixkHtgqp-mOc-qAhgyVNYZ0NLE_6VO63ZSLMc', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzc3MjEsInN1YiI6IjkifQ.xlrXggsmvMYbifFuGIQ7jWxEIGg7ucyAs92BIdncySA', '1', '2024-06-05 14:35:21');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzU0NzIsInN1YiI6IjkifQ.8-i85pev_rfyGNJbazkAYUj6GiGe79-_k_VgswCOimc', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzg0NzIsInN1YiI6IjkifQ.lIgtErOfI6nTK629mKsTxw4b5DcXNaRsv9beuTGBDlw', '1', '2024-06-05 14:47:52');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzU1NjksInN1YiI6IjkifQ.qbT6wphzCP6sfzQ0drGgYcSfxOpM-InJG6wL2quZKlc', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzg1NjksInN1YiI6IjkifQ.qZoguhy_vz6l3bHdSKk4d8DqOVDjT-fvuupRkCWbIzw', '1', '2024-06-05 14:49:29');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzU5NTUsInN1YiI6IjkifQ.ddTWbo6KXnTLN0AVLzeszWrvteS53zbSDQRCjBTYyOs', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzg5NTUsInN1YiI6IjkifQ.Jj22Ag2agNSCZMHfp3M5go5sWc5n8S48b_fClaBfSXs', '1', '2024-06-05 14:55:55');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzUyNzIsInN1YiI6IjkifQ.eLvKIogDM25Fd2IfrtddK_5UYnpXTRZTv4wF0CHROso', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzgyNzIsInN1YiI6IjkifQ.CvkO6AupUNBSpxYLZhNLb7vm0m1XgefnN3ID2SqzN3k', '1', '2024-06-05 14:44:32');
+INSERT INTO `token` VALUES ('9', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NzYwMTYsInN1YiI6IjkifQ.-l4oT3AKkr5xuE2Ir-Sv8aqdStlruL7bxSwTH_ZCo6k', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTgxNzkwMTYsInN1YiI6IjkifQ.j9iJbsmf6uh29RWWgiI07imAYDfEU5Sat2Wt8sjB1TE', '1', '2024-06-05 14:56:56');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMjYzNTIsInN1YiI6IjIifQ.qLP-y361KX_k4LYe81gfNCukYw5egd8gKi42s0mEISE', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MjkzNTIsInN1YiI6IjIifQ.yNoa1E7SVzhIFyjJHanW3nnrfivaPqfUJJvh_XAs6W8', '1', '2024-06-01 13:49:12');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTE1NDcsInN1YiI6IjIifQ.SUyk719ZtPZLq8I5OAdlXTuJ_1BKPfSDpT-vZEtQ1Tk', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTQ1NDcsInN1YiI6IjIifQ.TxFUCQFiFdSLqH3mTFXo8k7nBc7xU_FIz-y6eRDvFKw', '1', '2024-06-01 09:42:27');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTI2NzIsInN1YiI6IjIifQ.ddC0gpT7pSbjLFLeWVoFKvOmq2dS55p_Khhnb6xMKA8', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTU2NzIsInN1YiI6IjIifQ.jZ6mpTzuVB6TMmRXAGgObLDMKMgmumPCPeuO8HqL5Vk', '1', '2024-06-01 10:01:12');
@@ -409,6 +459,24 @@ INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiO
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTQzMzEsInN1YiI6IjIifQ.fjbI4TIsuJGCBlrg_qej6raY0elCZQxp6ZYwgEyAIHM', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTczMzEsInN1YiI6IjIifQ.L9NczRuDCwAEONIqByekNlktk_n5rEutPKS4atOU8Qg', '1', '2024-06-01 10:28:51');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTY2MDcsInN1YiI6IjIifQ.AbwC5U9JWW7ToKgP5I8o9GvGrWKqAJgPk92bSxPsAxs', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTk2MDcsInN1YiI6IjIifQ.8GRs9vjJ_m52mTwZmU28doDATeogDD4NSCSiJDPu3oA', '1', '2024-06-01 11:06:47');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcyMTY2NzksInN1YiI6IjIifQ.W8CvNHY05BynxtBWLl1Q13KeJP0HMn4X2a8s3BPoYRk', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc4MTk2NzksInN1YiI6IjIifQ.c4wvISplMivXcJNdgaZB5syymG9PV15dMR0GKeAZmoE', '1', '2024-06-01 11:07:59');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczMjI3MjAsInN1YiI6IjIifQ.vZfnwOT7sFKMAJ3CGy7n6x4PAsRhppQyiYXIMpOOOco', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5MjU3MjAsInN1YiI6IjIifQ.yqHtXAqUl3f79AGEvGqPcNHrqhXQgJRO4X_eNZmkKmU', '1', '2024-06-02 16:35:20');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczMjI5NTksInN1YiI6IjIifQ.oEUv6oJH-QlGnP7tjekCKO0VgHPyblWlAQdfGy2VfG0', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5MjU5NTksInN1YiI6IjIifQ.d2aelPiVBXsGBwczo4-nlI8TW_laDJ-Pwhyv0cZBgKg', '1', '2024-06-02 16:39:19');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczMzI3OTQsInN1YiI6IjIifQ.qtImIjxVz0cTWC_IhNfKvL17YhI8SMXIQTQ87vJAqyo', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5MzU3OTQsInN1YiI6IjIifQ.j6mp1n7YADzBediilnJ2qjVq2tCqEk1pJzsLby8T2a0', '1', '2024-06-02 19:23:14');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczMzIwNjMsInN1YiI6IjIifQ.GCHmP3DrUwpNR7-xf-bOZcaEml1kwoFdsbLK_UPvqYg', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5MzUwNjMsInN1YiI6IjIifQ.PAZdzozHz_vyUoIQp-YU4uDx33A9JoU2uMgH9bVycoo', '1', '2024-06-02 19:11:03');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczMzIyNDIsInN1YiI6IjIifQ.bPDwhQmQZiqQSb0qoTYGD7vBoiQRvD5quvUGx-RZ6N8', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5MzUyNDIsInN1YiI6IjIifQ.-_Ki6uLkNFTdi8KCUNKiCgJ_qojzQBaWn6b3MZYYEqc', '1', '2024-06-02 19:14:02');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczMzMwMzEsInN1YiI6IjIifQ.aZ2D-BwOkadHZB20jGzAu2L_qxDEKi93n8Z1hEHcDio', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5MzYwMzEsInN1YiI6IjIifQ.YeZ5St73YzDfhHzVF-Qd_q27HsddNj9zOh_7ePNIhUk', '1', '2024-06-02 19:27:11');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODc1MDUsInN1YiI6IjIifQ.48gsiCeEIPft_hmqaycnljweVTzs0S2XHyKL8HTKZ8E', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5OTA1MDUsInN1YiI6IjIifQ.zi4ljrAZgZYRvw_t25-VYLEP5v9XTtPd3nl8IvpsFkg', '1', '2024-06-03 10:35:05');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODc2MjUsInN1YiI6IjIifQ.5vkaVtAhKus6glOKl8NJPI_Ja-VAxkRRYNgjOWBtX4A', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5OTA2MjUsInN1YiI6IjIifQ.uFPaS8A4dXBgGmhZocQZiyfVy2_Zc1uMu9m9oVWUP_Y', '1', '2024-06-03 10:37:05');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODE0MzksInN1YiI6IjIifQ.0g35Todg8FOaTlPfO9Mt8zHMGauqXFx69LrEVhXzIIM', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODQ0MzksInN1YiI6IjIifQ.pgIL_7mJPafR9DRKL-53lfc6MV-FyDv4tRP11uqbTYw', '1', '2024-06-03 08:53:59');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODE3ODIsInN1YiI6IjIifQ.E0wqjyZxrF1i8v8kx6P5H7vikYTpKKrPF9PuDSsYBFM', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODQ3ODIsInN1YiI6IjIifQ.ig8yET1jvvSQwK5nZuPkGhnK1BGq88a6QslfE-E7Arc', '1', '2024-06-03 08:59:42');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODgwMzMsInN1YiI6IjIifQ.bNntZOJlxCffsyBKpuBKTGJZi9-pAfwfCJNMfaEEpi8', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5OTEwMzMsInN1YiI6IjIifQ.AG0odaQwiuJhSEAJjZYhXm8GzGlMYcD9arLKSddcmFE', '1', '2024-06-03 10:43:53');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODM3MzgsInN1YiI6IjIifQ.O5PTanaxuZWlXTRrfBHmHqOer8P6gE7nGqciBUtLNlA', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODY3MzgsInN1YiI6IjIifQ.P_CImaeShSDfqSsXa6MF6-YNPACqkXUrBM_BQqELhWw', '1', '2024-06-03 09:32:18');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODQ2MDQsInN1YiI6IjIifQ.WRrJet_QC-Ck7zZUZ42Zbjx8hcj7jkux3hheNL2V3T8', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODc2MDQsInN1YiI6IjIifQ.VnK38hptkSEAkBjCSCl3p3thVa43lG-bNIXGYNtJhc8', '1', '2024-06-03 09:46:44');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODQ3NjksInN1YiI6IjIifQ.iGUUrm_M9yTfMOb6zX46N2B_n2KMZI4AapUWhj_GOy0', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODc3NjksInN1YiI6IjIifQ.zrrkusat9skmvHv6rk7ZZM0EeiUg1picoPSUZavTq44', '1', '2024-06-03 09:49:29');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODQyMzAsInN1YiI6IjIifQ.cWGbhK1bKytPqoKTC1QdstRpCQPbrlVph_3GAgws4Kw', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODcyMzAsInN1YiI6IjIifQ.rwQe2DnnbY64pN_zHcBSEdZpEaMjnrcH5rIY9D1CXSI', '1', '2024-06-03 09:40:30');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODU5MTAsInN1YiI6IjIifQ.6_Qsr7X7ATXrPc18cP5kAjHuqLxM9UdST8Jvw8ZFV70', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODg5MTAsInN1YiI6IjIifQ.gjiXe24OyDFyr8mFxVnQRUk4Fq2NxL_St27QVUdXChA', '1', '2024-06-03 10:08:30');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODY2NDEsInN1YiI6IjIifQ.GQdZ3Ags36gC3Smu372FxVvSpGsbj7FZtTOabzJDmiM', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODk2NDEsInN1YiI6IjIifQ.NyAkUMP3ga-j2GUWyWuDCsx_NHAGIvXs0nJt8FzoNaw', '1', '2024-06-03 10:20:41');
+INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTczODY3NjcsInN1YiI6IjIifQ.RzYvfOCBJlBpn7lE--v2N1we1dS8kO0-KGe29-gPvQ0', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc5ODk3NjcsInN1YiI6IjIifQ.J8LqByFBWtdLwSkXNwPoNkshx-KEHThvwYZKwEyhfmU', '1', '2024-06-03 10:22:47');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTY1NjU4MDEsInN1YiI6IjIifQ.S2pyIZLRStVNg1z84wqjwX9uMkV7jvH_PDQkuqi_K9I', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTcxNjg4MDEsInN1YiI6IjIifQ.QbQ4S9I3vmrOL5k7uQ-BWtyyGzA9R2ooUBD2-cL6NYo', '1', '2024-05-24 22:20:01');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTY4MjQwMjksInN1YiI6IjIifQ.1RXNhdy8MdbPhrWe8C0uYikVpYNMKKrynu_IOa-FD6I', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc0MjcwMzAsInN1YiI6IjIifQ.TxCEOtYfNZswR52pE_rQjW335Sk0HBvnNJE80y9ELig', '1', '2024-05-27 22:03:50');
 INSERT INTO `token` VALUES ('2', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTY5NDg3NDUsInN1YiI6IjIifQ.HU5FKu3_POcUFCLshYItB3NI3h6AltjEMHjZoVEijSI', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTc1NTE3NDUsInN1YiI6IjIifQ.YeqzkrXL5SWuv5TGXo_WPcvVRTVCm0bDEyCkpYIpTsc', '1', '2024-05-29 08:42:25');
@@ -432,17 +500,20 @@ CREATE TABLE `user` (
   `pass_user` varchar(255) NOT NULL,
   `username` varchar(255) NOT NULL,
   PRIMARY KEY (`id_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Records of user
 -- ----------------------------
 INSERT INTO `user` VALUES ('1', 'string', 'string', 'string', '2024-05-24', 'string', 'string', 'string', 'string', '$2b$12$/6ZZyKIIeknqJCuU9KhaMOQ1fqi7AAlXLIPJ1UYPkGBO/fAFhTjIO', 'string');
-INSERT INTO `user` VALUES ('2', 'ratu', '3217', 'bdg', '2024-05-24', 'perempuan', 'bdg', '0813', 'ratu@gmail.com', '$2b$12$mdwt3qtDrP/o5G2jMV37.eWe9SqOL/S4jtz1ksNfhSQcsBeWrE4km', 'ratusyakh');
+INSERT INTO `user` VALUES ('2', 'string', 'string', 'string', '0000-00-00', 'string', 'string', 'string', 'string', '$2b$12$mdwt3qtDrP/o5G2jMV37.eWe9SqOL/S4jtz1ksNfhSQcsBeWrE4km', 'ratusyakh');
 INSERT INTO `user` VALUES ('3', 'mine', '32171', 'bdg', '2024-05-24', 'p', 'bdg', '0897', 'mine@mail.com', '$2b$12$3rIVdLwmB.3RCJeIjOw.ZObVPsJfkMLNHjzdH1qjngRKukGh8lSFa', 'miineeu');
 INSERT INTO `user` VALUES ('4', 'faya', '123', 'bdg', '2024-05-24', 'p', 'bdg', '0232', 'fay@mail.com', '$2b$12$TtPamgSZE84uHl3seJk/CO5N0p/cLuY4uWkB.weyxqBIh8vYZO6O2', 'faayyeeay');
 INSERT INTO `user` VALUES ('5', 'lysa', '2341', 'bks', '2024-05-24', 'p', 'bdg', '0854', 'lysa@mail.com', '$2b$12$KeN1GW2BHJVShX8IZEN83ukzUEqN.5c0tbzW1zH.4xFQvIwo3XZB2', 'lysaa');
 INSERT INTO `user` VALUES ('6', 'tia', '1', 'jkt', '2024-05-24', 'p', 'halim', '2312', 'tiamaniez2004@gmail.com', '$2b$12$YQD38FvrCE5oarkae470o.2s9UbIwJOVNBRA5Z.yKi9cuPor6UQ1m', 'tiaifanian');
+INSERT INTO `user` VALUES ('7', 'faya', '3217867', 'bekasi', '2024-06-05', 'perempuan', 'bekasi', '0812', 'faya@mail.com', '$2b$12$xnuRuZtaqsm/cjnBAIjIoeZ0wLzkPzXuRuroq4J7xnnt10TeAcPEe', 'fayeay');
+INSERT INTO `user` VALUES ('8', 'lysa', '43121', 'bekasi', '2024-06-05', 'P', 'bekasi', '098789', 'lysa@mail.com', '$2b$12$.7mYLiroOiAZH4x7PP4nbes8HHHdAv4/kYINGw3Y6EymfT10MmnPW', 'lysa');
+INSERT INTO `user` VALUES ('9', 'mine', '567253', 'bdg', '2024-06-05', 'P', 'bdg', '9078', 'mine@gmail.com', '$2b$12$skecl.nDjkQnFyxLrk/mh.cNie9BPPVp0Cz4QI3.7ElUSDf2bFa.O', 'mineu');
 
 -- ----------------------------
 -- Table structure for `waktu`

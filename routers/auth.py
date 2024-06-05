@@ -98,3 +98,26 @@ def logout(token: str = Depends(JWTBearer()), db: Session = Depends(get_db)):
         db.commit()
         db.refresh(existing_token)
     return ResponseBase(message="Logout Successfully", data=None, error=False)
+
+@auth_router.get('/get-user-name')
+def get_user_name(session: Session = Depends(get_db), token: str = Depends(JWTBearer())):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        if not user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token or user ID not found in token")
+
+        user = session.query(User).filter(User.id_user == user_id).first()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+        response_data = user.nama_user
+        return ResponseBase(message="User name retrieved successfully", data=response_data, error=False)
+    
+    except jwt.JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token validation failed")
+    
+    
+    
